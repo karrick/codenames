@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/karrick/gohm"
+	"github.com/karrick/gohm/v2"
 	"github.com/karrick/golf"
 	"github.com/natefinch/lumberjack"
 )
