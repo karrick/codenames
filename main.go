@@ -90,16 +90,19 @@ var (
 
 	optAdjectives = golf.String("adjectives", "", "specify file with adjectives")
 	optAnimals    = golf.String("animals", "", "specify file with animals")
+	optLogs       = golf.String("logs", "", "specify optional service log file")
 	optPort       = golf.Int("port", 8080, "specify http port")
 )
 
 func main() {
-	log.SetOutput(&lumberjack.Logger{
-		Filename:   "service.log",
-		MaxAge:     30,  // days
-		MaxBackups: 50,  // count
-		MaxSize:    500, // megabytes
-	})
+	if *optLogs != "" {
+		log.SetOutput(&lumberjack.Logger{
+			Filename:   *optLogs,
+			MaxAge:     3,   // days
+			MaxBackups: 10,  // count
+			MaxSize:    100, // megabytes
+		})
+	}
 
 	golf.Parse()
 
@@ -187,7 +190,7 @@ Command line options:
 			queries := atomic.SwapUint64(&total, 0)
 			duration := now.Sub(prev)
 			rate := float64(queries*uint64(time.Second)) / float64(duration)
-			fmt.Printf("%d queries in %s; %g qps\n", queries, duration, rate)
+			log.Printf("%d queries in %s; %g qps\n", queries, duration, rate)
 			prev = now
 		case sig := <-signals:
 			switch sig {
