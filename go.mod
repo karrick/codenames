@@ -8,3 +8,5 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.2.5 // indirect
 )
+
+go 1.13
