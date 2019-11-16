@@ -169,8 +169,13 @@ Command line options:
 		usage("must specify file for both adjectives and animals")
 	}
 
-	if *optRedirect && (*optCert == "" || *optKey == "") {
-		usage("cannot redirect HTTP to HTTPS without HTTPS, and cannot serve HTTPS with cert file ane key file")
+	if *optCert == "" || *optKey == "" {
+		if !*optRedirect {
+			usage("cannot redirect HTTP to HTTPS without HTTPS, and cannot serve HTTPS with cert file ane key file")
+		}
+		if *optHttps != 8443 {
+			usage("cannot redirect HTTP to HTTPS without HTTPS, and cannot serve HTTPS with cert file ane key file")
+		}
 	}
 
 	adjectives, err := loadFromFile(*optAdjectives)
