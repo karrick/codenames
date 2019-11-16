@@ -260,7 +260,7 @@ Command line options:
 		cipher = true
 
 		if *optRedirect {
-			clearSrv.Handler = http.HandlerFunc(makeHttpRedirector(":8443"))
+			clearSrv.Handler = http.HandlerFunc(makeHttpRedirector(fmt.Sprintf(":%d", *optHttps)))
 		}
 
 		go func() {
