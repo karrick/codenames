@@ -256,9 +256,7 @@ Command line options:
 		}
 
 		go func() {
-			certfile := filepath.Join(os.Getenv("HOME"), ".local/share/mkcert/rootCA.pem")
-			keyfile := filepath.Join(os.Getenv("HOME"), ".local/share/mkcert/rootCA-key.pem")
-			err := cipherSrv.ListenAndServeTLS(certfile, keyfile)
+			err := cipherSrv.ListenAndServeTLS(*optCert, *optKey)
 			if err != nil && err != http.ErrServerClosed {
 				fatal(err)
 			}
