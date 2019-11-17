@@ -173,7 +173,7 @@ Command line options:
 	}
 
 	if *optCert == "" || *optKey == "" {
-		if !*optRedirect {
+		if *optRedirect {
 			usage("cannot redirect HTTP to HTTPS without HTTPS, and cannot serve HTTPS with cert file ane key file")
 		}
 		if *optHttps != 8443 {
