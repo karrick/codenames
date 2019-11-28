@@ -5,12 +5,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"log"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -18,92 +17,33 @@ import (
 
 	"github.com/karrick/gohm/v2"
 	"github.com/karrick/golf"
+	"github.com/karrick/gologs"
 	"github.com/natefinch/lumberjack"
 )
 
-// fatal prints the error to standard error then exits the program with status
-// code 1.
 func fatal(err error) {
-	stderr("%s\n", err)
+	log.Error("%s", err)
 	os.Exit(1)
 }
 
-// newline returns a string with exactly one terminating newline character.
-// More simple than strings.TrimRight.  When input string has multiple newline
-// characters, it will strip off all but first one, reusing the same underlying
-// string bytes.  When string does not end in a newline character, it returns
-// the original string with a newline character appended.
-func newline(s string) string {
-	l := len(s)
-	if l == 0 {
-		return "\n"
-	}
-
-	// While this is O(length s), it stops as soon as it finds the first non
-	// newline character in the string starting from the right hand side of the
-	// input string.  Generally this only scans one or two characters and
-	// returns.
-	for i := l - 1; i >= 0; i-- {
-		if s[i] != '\n' {
-			if i+1 < l && s[i+1] == '\n' {
-				return s[:i+2]
-			}
-			return s[:i+1] + "\n"
-		}
-	}
-
-	return s[:1] // all newline characters, so just return the first one
-}
-
-// stderr formats and prints its arguments to standard error after prefixing
-// them with the program name.
-func stderr(f string, args ...interface{}) {
-	os.Stderr.Write([]byte(ProgramName + ": " + newline(fmt.Sprintf(f, args...))))
-}
-
-// usage prints the error to standard error, prints message how to get help,
-// then exits the program with status code 2.
 func usage(f string, args ...interface{}) {
-	stderr(f, args...)
+	log.Error(f, args...)
 	golf.Usage()
 	os.Exit(2)
 }
 
-// verbose formats and prints its arguments to standard error after prefixing
-// them with the program name.  This skips printing when optVerbose is false.
-func verbose(f string, args ...interface{}) {
-	if *optVerbose {
-		stderr(f, args...)
-	}
-}
-
-// warning formats and prints its arguments to standard error after prefixing
-// them with the program name.  This skips printing when optQuiet is true.
-func warning(f string, args ...interface{}) {
-	if !*optQuiet {
-		stderr(f, args...)
-	}
-}
-
-var ProgramName string
-
 func init() {
-	var err error
-	if ProgramName, err = os.Executable(); err != nil {
-		ProgramName = os.Args[0]
-	}
-	ProgramName = filepath.Base(ProgramName)
-
 	// Rather than display the entire usage information for a parsing error,
 	// merely allow golf library to display the error message, then print the
 	// command the user may use to show command line usage information.
-	golf.Usage = func() {
-		stderr("Use `%s --help` for more information.\n", ProgramName)
-	}
+	golf.Usage = func() { log.Error("Use '--help' for more information.") }
 }
 
 var (
+	log *gologs.Logger
+
 	optHelp    = golf.BoolP('h', "help", false, "Print command line help and exit")
+	optDebug   = golf.Bool("debug", false, "Print debug output to stderr")
 	optQuiet   = golf.BoolP('q', "quiet", false, "Do not print intermediate errors to stderr")
 	optVerbose = golf.BoolP('v', "verbose", false, "Print verbose output to stderr")
 
@@ -119,15 +59,6 @@ var (
 )
 
 func main() {
-	if *optLogs != "" {
-		log.SetOutput(&lumberjack.Logger{
-			Filename:   *optLogs,
-			MaxAge:     3,   // days
-			MaxBackups: 10,  // count
-			MaxSize:    100, // megabytes
-		})
-	}
-
 	golf.Parse()
 
 	if *optHelp {
@@ -149,7 +80,7 @@ redirected to HTTPS port.
 
 SYNOPSIS:
 
-    codenames [--quiet | [--force | --verbose]]
+    codenames [--debug | --verbose | --quiet]
               [--http NUMBER]
               [--logs FILE]
               [--certfile FILE] [--keyfile FILE] [--https NUMBER] [--redirect]
@@ -166,6 +97,36 @@ Command line options:
 `)
 		golf.PrintDefaultsTo(os.Stdout)
 		return
+	}
+
+	var logOutput io.Writer = os.Stderr
+
+	if *optLogs != "" {
+		logOutput = &lumberjack.Logger{
+			Filename:   *optLogs,
+			MaxAge:     3,   // days
+			MaxBackups: 10,  // count
+			MaxSize:    100, // megabytes
+		}
+	}
+
+	// Initialize the global log variable, which will be used very much like the
+	// log standard library would be used.
+	var err error
+	log, err = gologs.New(logOutput, gologs.DefaultCommandFormat)
+	if err != nil {
+		panic(err)
+	}
+
+	// Configure log level according to command line flags.
+	if *optDebug {
+		log.SetDebug()
+	} else if *optVerbose {
+		log.SetVerbose()
+	} else if *optQuiet {
+		log.SetError()
+	} else {
+		log.SetInfo()
 	}
 
 	if *optAdjectives == "" || *optAnimals == "" {
@@ -281,7 +242,8 @@ Command line options:
 	signals := make(chan os.Signal, 2) // buffered channel
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 
-	log.Printf("[SIGNAL] entering loop\n")
+	sigLog := gologs.NewBranchWithPrefix(log, "[SIGNAL] ")
+	sigLog.Info("entering loop")
 
 	prev := time.Now()
 	for {
@@ -290,24 +252,24 @@ Command line options:
 			queries := atomic.SwapUint64(&total, 0)
 			duration := now.Sub(prev)
 			rate := float64(queries*uint64(time.Second)) / float64(duration)
-			log.Printf("%d queries in %s; %g qps\n", queries, duration, rate)
+			sigLog.Info("%d queries in %s; %g qps", queries, duration, rate)
 			prev = now
 		case sig := <-signals:
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM:
-				log.Printf("[SIGNAL] received %s\n", sig)
+				sigLog.Info("received %s", sig)
 				clearSrv.Shutdown(context.Background())
 				if cipher {
 					cipherSrv.Shutdown(context.Background())
 				}
-				log.Printf("[SIGNAL] shutdown complete; exiting\n")
+				sigLog.Info("shutdown complete; exiting")
 				os.Exit(0)
 			case syscall.SIGUSR1:
 				if atomic.LoadUint32(&globalLogBitmask) == gohm.LogStatusErrors {
-					log.Printf("[SIGNAL] received %s; toggling request logging to log all requests\n", sig)
+					sigLog.Info("received %s; toggling request logging to log all requests", sig)
 					atomic.StoreUint32(&globalLogBitmask, gohm.LogStatusAll)
 				} else {
-					log.Printf("[SIGNAL] received %s; toggling request logging to log error requests\n", sig)
+					sigLog.Info("received %s; toggling request logging to log error requests", sig)
 					atomic.StoreUint32(&globalLogBitmask, gohm.LogStatusErrors)
 				}
 			}
