@@ -113,7 +113,7 @@ Command line options:
 	// Initialize the global log variable, which will be used very much like the
 	// log standard library would be used.
 	var err error
-	log, err = gologs.New(logOutput, gologs.DefaultCommandFormat)
+	log, err = gologs.New(logOutput, gologs.DefaultServiceFormat)
 	if err != nil {
 		panic(err)
 	}
