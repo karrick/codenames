@@ -142,12 +142,12 @@ Command line options:
 		}
 	}
 
-	adjectives, err := loadFromFile(*optAdjectives)
+	adjectives, err := linesFromFile(*optAdjectives)
 	if err != nil {
 		fatal(err)
 	}
 
-	animals, err := loadFromFile(*optAnimals)
+	animals, err := linesFromFile(*optAnimals)
 	if err != nil {
 		fatal(err)
 	}
@@ -248,7 +248,7 @@ Command line options:
 	prev := time.Now()
 	for {
 		select {
-		case now := <-time.After(10 * time.Second):
+		case now := <-time.After(60 * time.Second):
 			queries := atomic.SwapUint64(&total, 0)
 			duration := now.Sub(prev)
 			rate := float64(queries*uint64(time.Second)) / float64(duration)
@@ -277,7 +277,7 @@ Command line options:
 	}
 }
 
-func loadFromFile(pathname string) ([]string, error) {
+func linesFromFile(pathname string) ([]string, error) {
 	var list []string
 	fh, err := os.Open(pathname)
 	if err != nil {
