@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -33,6 +34,15 @@ func usage(f string, args ...interface{}) {
 }
 
 func init() {
+	// Initialize the global log variable, which will be used very much like the
+	// log standard library would be used.
+	var err error
+	log, err = gologs.New(os.Stderr, gologs.DefaultServiceFormat)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", filepath.Base(os.Args[0]), err)
+		os.Exit(1)
+	}
+
 	// Rather than display the entire usage information for a parsing error,
 	// merely allow golf library to display the error message, then print the
 	// command the user may use to show command line usage information.
@@ -115,7 +125,7 @@ Command line options:
 	var err error
 	log, err = gologs.New(logOutput, gologs.DefaultServiceFormat)
 	if err != nil {
-		panic(err)
+		fatal(err)
 	}
 
 	// Configure log level according to command line flags.
