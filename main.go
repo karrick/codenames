@@ -23,12 +23,12 @@ import (
 )
 
 func fatal(err error) {
-	log.Error("%s", err)
+	logs.Error("%s", err)
 	os.Exit(1)
 }
 
 func usage(f string, args ...interface{}) {
-	log.Error(f, args...)
+	logs.Error(f, args...)
 	golf.Usage()
 	os.Exit(2)
 }
@@ -37,7 +37,7 @@ func init() {
 	// Initialize the global log variable, which will be used very much like the
 	// log standard library would be used.
 	var err error
-	log, err = gologs.New(os.Stderr, gologs.DefaultServiceFormat)
+	logs, err = gologs.New(os.Stderr, gologs.DefaultServiceFormat)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %s\n", filepath.Base(os.Args[0]), err)
 		os.Exit(1)
@@ -46,11 +46,11 @@ func init() {
 	// Rather than display the entire usage information for a parsing error,
 	// merely allow golf library to display the error message, then print the
 	// command the user may use to show command line usage information.
-	golf.Usage = func() { log.Error("Use '--help' for more information.") }
+	golf.Usage = func() { logs.Error("Use '--help' for more information.") }
 }
 
 var (
-	log *gologs.Logger
+	logs *gologs.Logger
 
 	optHelp    = golf.BoolP('h', "help", false, "Print command line help and exit")
 	optDebug   = golf.Bool("debug", false, "Print debug output to stderr")
@@ -123,20 +123,20 @@ Command line options:
 	// Initialize the global log variable, which will be used very much like the
 	// log standard library would be used.
 	var err error
-	log, err = gologs.New(logOutput, gologs.DefaultServiceFormat)
+	logs, err = gologs.New(logOutput, gologs.DefaultServiceFormat)
 	if err != nil {
 		fatal(err)
 	}
 
 	// Configure log level according to command line flags.
 	if *optDebug {
-		log.SetDebug()
+		logs.SetDebug()
 	} else if *optVerbose {
-		log.SetVerbose()
+		logs.SetVerbose()
 	} else if *optQuiet {
-		log.SetError()
+		logs.SetError()
 	} else {
-		log.SetInfo()
+		logs.SetInfo()
 	}
 
 	if *optAdjectives == "" || *optAnimals == "" {
@@ -252,8 +252,8 @@ Command line options:
 	signals := make(chan os.Signal, 2) // buffered channel
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 
-	sigLog := gologs.NewBranchWithPrefix(log, "[SIGNAL] ")
-	sigLog.Info("entering loop")
+	sigLogs := gologs.NewBranchWithPrefix(logs, "[SIGNAL] ")
+	sigLogs.Info("entering loop")
 
 	prev := time.Now()
 	for {
@@ -262,24 +262,24 @@ Command line options:
 			queries := atomic.SwapUint64(&total, 0)
 			duration := now.Sub(prev)
 			rate := float64(queries*uint64(time.Second)) / float64(duration)
-			sigLog.Info("%d queries in %s; %g qps", queries, duration, rate)
+			sigLogs.Info("%d queries in %s; %g qps", queries, duration, rate)
 			prev = now
 		case sig := <-signals:
 			switch sig {
 			case syscall.SIGINT, syscall.SIGTERM:
-				sigLog.Info("received %s", sig)
+				sigLogs.Info("received %s", sig)
 				clearSrv.Shutdown(context.Background())
 				if cipher {
 					cipherSrv.Shutdown(context.Background())
 				}
-				sigLog.Info("shutdown complete; exiting")
+				sigLogs.Info("shutdown complete; exiting")
 				os.Exit(0)
 			case syscall.SIGUSR1:
 				if atomic.LoadUint32(&globalLogBitmask) == gohm.LogStatusErrors {
-					sigLog.Info("received %s; toggling request logging to log all requests", sig)
+					sigLogs.Info("received %s; toggling request logging to log all requests", sig)
 					atomic.StoreUint32(&globalLogBitmask, gohm.LogStatusAll)
 				} else {
-					sigLog.Info("received %s; toggling request logging to log error requests", sig)
+					sigLogs.Info("received %s; toggling request logging to log error requests", sig)
 					atomic.StoreUint32(&globalLogBitmask, gohm.LogStatusErrors)
 				}
 			}
