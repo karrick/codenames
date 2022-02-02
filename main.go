@@ -22,7 +22,7 @@ import (
 )
 
 func fatal(err error) {
-	log.Error().Msg(err.Error())
+	log.Error().Err(err).Msg("")
 	os.Exit(1)
 }
 
@@ -252,7 +252,7 @@ Command line options:
 			queries := atomic.SwapUint64(&total, 0)
 			duration := now.Sub(prev)
 			rate := float64(queries*uint64(time.Second)) / float64(duration)
-			sigLogs.Info().Int("queries", int64(queries)).String("duration", duration.String()).Float("rate", rate).Msg("")
+			sigLogs.Info().Int("queries", int(queries)).String("duration", duration.String()).Float("rate", rate).Msg("")
 			prev = now
 		case sig := <-signals:
 			switch sig {

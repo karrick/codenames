@@ -6,8 +6,8 @@ github.com/karrick/gohm/v2 v2.15.0 h1:y/WvoCZWjps/1ufyRKjQLmHNL/vqUG/K8NIDwXDxye
 github.com/karrick/gohm/v2 v2.15.0/go.mod h1:Szf0dhwJPTpX7adpliEOw4acexih2IQQYgsCUMRoQ6w=
 github.com/karrick/golf v1.4.0 h1:9i9HnUh7uCyUFJhIqg311HBibw4f2pbGldi0ZM2FhaQ=
 github.com/karrick/golf v1.4.0/go.mod h1:qGN0IhcEL+IEgCXp00RvH32UP59vtwc8w5YcIdArNRk=
-github.com/karrick/gologs v0.7.1 h1:qOqFKMDPRoxnNY8UbA/739AM6JdpK3Q/t1GDvhchMFo=
-github.com/karrick/gologs v0.7.1/go.mod h1:IinhKlyVMG5EJN1Y3+pkKqWrtNNPtJGu3w+/9dZPXWg=
+github.com/karrick/gologs v0.9.0 h1:00nBh5UegB4wQDeLGTjECTRojjZq1yC7QnBJqlbpwQM=
+github.com/karrick/gologs v0.9.0/go.mod h1:IinhKlyVMG5EJN1Y3+pkKqWrtNNPtJGu3w+/9dZPXWg=
 github.com/karrick/gorill v1.10.2 h1:MtSaM3eGwxguM153R32jeslMMFZxnr0ZvNEWU6dnByk=
 github.com/karrick/gorill v1.10.2/go.mod h1:RlCfg3XIDNF2pbami04hiO2Yj7k8es4rIs3dJONvCs0=
 github.com/natefinch/lumberjack v2.0.0+incompatible h1:4QJd3OLAMgj7ph+yZTuX13Ld4UpgHp07nNdFX7mqFfM=
