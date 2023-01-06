@@ -285,7 +285,7 @@ func linesFromFile(pathname string) ([]string, error) {
 	}
 	s := bufio.NewScanner(fh)
 	for s.Scan() {
-		list = append(list, s.Text())
+		list = append(list, strings.ToTitle(s.Text()))
 	}
 	cerr := fh.Close()
 	if err := s.Err(); err != nil {
