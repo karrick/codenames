@@ -242,7 +242,7 @@ Command line options:
 	signals := make(chan os.Signal, 2) // buffered channel
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR1)
 
-	sigLogs := log.NewBranchWithString("module", "signal")
+	sigLogs := log.With().String("module", "signal").Logger()
 	sigLogs.Info().Msg("entering loop")
 
 	prev := time.Now()
@@ -285,7 +285,7 @@ func linesFromFile(pathname string) ([]string, error) {
 	}
 	s := bufio.NewScanner(fh)
 	for s.Scan() {
-		list = append(list, strings.ToTitle(s.Text()))
+		list = append(list, strings.Title(s.Text()))
 	}
 	cerr := fh.Close()
 	if err := s.Err(); err != nil {
